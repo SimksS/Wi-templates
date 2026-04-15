@@ -1,5 +1,9 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Documentação do produto (PT-BR)
+
+- **Especificação do MVP**: `docs/ESPECIFICACAO-MVP.md`
+
 ## Getting Started
 
 First, run the development server:
