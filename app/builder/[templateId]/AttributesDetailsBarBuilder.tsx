@@ -11,13 +11,126 @@ import {
   type AttributesDetailsBarData,
 } from "../../lib/templates/registry2";
 
+// --- Types & UI Components ---
+
 type Props = { templateName: string };
+
+function SectionHeader({ title, description }: { title: string; description?: string }) {
+  return (
+    <div className="mb-6">
+      <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
+      {description && (
+        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      )}
+    </div>
+  );
+}
+
+function InputLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <label className="block text-sm font-medium text-foreground mb-2">
+      {children}
+    </label>
+  );
+}
+
+function TextInput({
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: "text" | "url";
+}) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="h-11 w-full rounded-lg border border-border bg-white px-4 text-sm text-foreground transition-colors placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+    />
+  );
+}
+
+function TextArea({
+  value,
+  onChange,
+  placeholder,
+  rows = 3,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  rows?: number;
+}) {
+  return (
+    <textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      rows={rows}
+      className="w-full resize-none rounded-lg border border-border bg-white px-4 py-3 text-sm text-foreground transition-colors placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+    />
+  );
+}
+
+function FormGroup({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <div className={`space-y-2 ${className}`}>{children}</div>;
+}
+
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`rounded-2xl border border-border bg-card p-5 shadow-sm ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+function Button({
+  onClick,
+  children,
+  variant = "primary",
+  disabled,
+  className = "",
+}: {
+  onClick?: () => void;
+  children: React.ReactNode;
+  variant?: "primary" | "secondary" | "ghost" | "danger";
+  disabled?: boolean;
+  className?: string;
+}) {
+  const variants = {
+    primary: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
+    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+    ghost: "text-muted-foreground hover:bg-secondary hover:text-foreground",
+    danger: "bg-destructive/10 text-destructive hover:bg-destructive/20",
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={[
+        "btn-press inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200",
+        disabled && "opacity-50 cursor-not-allowed pointer-events-none",
+        variants[variant],
+        className,
+      ].join(" ")}
+    >
+      {children}
+    </button>
+  );
+}
 
 export function AttributesDetailsBarBuilder({ templateName }: Props) {
   const [data, setData] = useState<AttributesDetailsBarData>(() =>
     getAttributesDetailsBarExample()
   );
-
   const [attributeIds, setAttributeIds] = useState<string[]>(() =>
     getAttributesDetailsBarExample().attributes.map(() => crypto.randomUUID())
   );
@@ -51,210 +164,296 @@ export function AttributesDetailsBarBuilder({ templateName }: Props) {
   const snippet = useMemo(() => toSnippet(renderedTemplate), [renderedTemplate]);
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <section className="rounded-2xl border border-black/10 bg-white p-5">
-        <div className="mb-4">
-          <h2 className="text-sm font-semibold text-zinc-900">Configuração</h2>
-          <p className="mt-1 text-xs text-zinc-600">
-            Atributos (esquerda) + lista de details (direita).
-          </p>
-        </div>
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-10">
+      {/* Configuration Panel */}
+      <section className="space-y-6">
+        {/* Attributes Section */}
+        <Card>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                Atributos
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {data.attributes.length} {data.attributes.length === 1 ? "item" : "itens"}
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                setData((d) => ({
+                  ...d,
+                  attributes: [...d.attributes, { iconUrl: "", label: "Novo atributo" }],
+                }));
+                setAttributeIds((ids) => [...ids, crypto.randomUUID()]);
+              }}
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Adicionar
+            </Button>
+          </div>
 
-        <div className="mt-5">
-          <SectionHeader
-            title={`Atributos (${data.attributes.length})`}
-            onAdd={() => {
-              setData((d) => ({
-                ...d,
-                attributes: [...d.attributes, { iconUrl: "", label: "Novo atributo" }],
-              }));
-              setAttributeIds((ids) => [...ids, crypto.randomUUID()]);
-            }}
-          />
-
-          <div className="mt-3 flex flex-col gap-3">
+          <div className="space-y-4">
             {data.attributes.map((attr, idx) => (
               <div
                 key={attributeIds[idx] ?? `${idx}`}
-                className="rounded-2xl border border-black/10 bg-white p-3"
+                className="rounded-xl border border-border bg-card/50 p-4 space-y-3"
               >
-                <ItemActions
-                  label={`Atributo ${idx + 1}`}
-                  idx={idx}
-                  total={data.attributes.length}
-                  onUp={() => {
-                    setData((d) => ({
-                      ...d,
-                      attributes: move(d.attributes, idx, idx - 1),
-                    }));
-                    setAttributeIds((ids) => move(ids, idx, idx - 1));
-                  }}
-                  onDown={() => {
-                    setData((d) => ({
-                      ...d,
-                      attributes: move(d.attributes, idx, idx + 1),
-                    }));
-                    setAttributeIds((ids) => move(ids, idx, idx + 1));
-                  }}
-                  onRemove={() => {
-                    setData((d) => ({
-                      ...d,
-                      attributes: d.attributes.filter((_, i) => i !== idx),
-                    }));
-                    setAttributeIds((ids) => ids.filter((_, i) => i !== idx));
-                  }}
-                />
-
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <label className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-zinc-700">
-                      URL do ícone (imagem)
+                {/* Header */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10 text-xs font-semibold text-primary">
+                      {idx + 1}
                     </span>
-                    <input
+                    <span className="text-sm font-medium text-foreground">
+                      Atributo {idx + 1}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setData((d) => ({
+                          ...d,
+                          attributes: move(d.attributes, idx, idx - 1),
+                        }));
+                        setAttributeIds((ids) => move(ids, idx, idx - 1));
+                      }}
+                      disabled={idx === 0}
+                      className="px-2"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setData((d) => ({
+                          ...d,
+                          attributes: move(d.attributes, idx, idx + 1),
+                        }));
+                        setAttributeIds((ids) => move(ids, idx, idx + 1));
+                      }}
+                      disabled={idx === data.attributes.length - 1}
+                      className="px-2"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </Button>
+                    <Button
+                      variant="danger"
+                      onClick={() => {
+                        setData((d) => ({
+                          ...d,
+                          attributes: d.attributes.filter((_, i) => i !== idx),
+                        }));
+                        setAttributeIds((ids) => ids.filter((_, i) => i !== idx));
+                      }}
+                      className="px-2"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Inputs */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <FormGroup className="mb-0">
+                    <InputLabel>URL do ícone</InputLabel>
+                    <TextInput
                       type="url"
                       value={attr.iconUrl}
-                      onChange={(e) =>
+                      onChange={(v) =>
                         setData((d) => ({
                           ...d,
                           attributes: d.attributes.map((a, i) =>
-                            i === idx ? { ...a, iconUrl: e.target.value } : a
+                            i === idx ? { ...a, iconUrl: v } : a
                           ),
                         }))
                       }
-                      placeholder="https://... (png/jpg/jpeg/webp/gif/avif)"
-                      className="h-9 rounded-lg border border-black/10 bg-white px-3 text-sm"
+                      placeholder="https://..."
                     />
-                    {invalidIconIndexes.has(idx) ? (
-                      <span className="text-[11px] font-medium text-red-700">
-                        Use uma URL de imagem (png/jpg/jpeg/webp/gif/avif). SVG não é aceito.
-                      </span>
-                    ) : null}
-                  </label>
+                    {invalidIconIndexes.has(idx) && (
+                      <p className="text-xs text-destructive">
+                        Formato de imagem inválido.
+                      </p>
+                    )}
+                  </FormGroup>
 
-                  <label className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-zinc-700">Texto</span>
-                    <input
-                      type="text"
+                  <FormGroup className="mb-0">
+                    <InputLabel>Texto</InputLabel>
+                    <TextInput
                       value={attr.label}
-                      onChange={(e) =>
+                      onChange={(v) =>
                         setData((d) => ({
                           ...d,
                           attributes: d.attributes.map((a, i) =>
-                            i === idx ? { ...a, label: e.target.value } : a
+                            i === idx ? { ...a, label: v } : a
                           ),
                         }))
                       }
-                      className="h-9 rounded-lg border border-black/10 bg-white px-3 text-sm"
+                      placeholder="Ex: 100% Natural"
                     />
-                  </label>
+                  </FormGroup>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
 
-        <div className="mt-6">
-          <SectionHeader
-            title={`Details (${data.detailsItems.length})`}
-            onAdd={() => {
-              setData((d) => ({
-                ...d,
-                detailsItems: [...d.detailsItems, { title: "Novo título", description: "Nova descrição" }],
-              }));
-              setDetailIds((ids) => [...ids, crypto.randomUUID()]);
-            }}
-          />
+        {/* Details Section */}
+        <Card>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                Detalhes
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {data.detailsItems.length} {data.detailsItems.length === 1 ? "item" : "itens"}
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                setData((d) => ({
+                  ...d,
+                  detailsItems: [
+                    ...d.detailsItems,
+                    { title: "Novo título", description: "Nova descrição" },
+                  ],
+                }));
+                setDetailIds((ids) => [...ids, crypto.randomUUID()]);
+              }}
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Adicionar
+            </Button>
+          </div>
 
-          <div className="mt-3 flex flex-col gap-3">
+          <div className="space-y-4">
             {data.detailsItems.map((it, idx) => (
               <div
                 key={detailIds[idx] ?? `${idx}`}
-                className="rounded-2xl border border-black/10 bg-white p-3"
+                className="rounded-xl border border-border bg-card/50 p-4 space-y-3"
               >
-                <ItemActions
-                  label={`Item ${idx + 1}`}
-                  idx={idx}
-                  total={data.detailsItems.length}
-                  onUp={() => {
-                    setData((d) => ({
-                      ...d,
-                      detailsItems: move(d.detailsItems, idx, idx - 1),
-                    }));
-                    setDetailIds((ids) => move(ids, idx, idx - 1));
-                  }}
-                  onDown={() => {
-                    setData((d) => ({
-                      ...d,
-                      detailsItems: move(d.detailsItems, idx, idx + 1),
-                    }));
-                    setDetailIds((ids) => move(ids, idx, idx + 1));
-                  }}
-                  onRemove={() => {
-                    setData((d) => ({
-                      ...d,
-                      detailsItems: d.detailsItems.filter((_, i) => i !== idx),
-                    }));
-                    setDetailIds((ids) => ids.filter((_, i) => i !== idx));
-                  }}
-                />
+                {/* Header */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-secondary text-xs font-semibold text-secondary-foreground">
+                      {idx + 1}
+                    </span>
+                    <span className="text-sm font-medium text-foreground">
+                      Item {idx + 1}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setData((d) => ({
+                          ...d,
+                          detailsItems: move(d.detailsItems, idx, idx - 1),
+                        }));
+                        setDetailIds((ids) => move(ids, idx, idx - 1));
+                      }}
+                      disabled={idx === 0}
+                      className="px-2"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setData((d) => ({
+                          ...d,
+                          detailsItems: move(d.detailsItems, idx, idx + 1),
+                        }));
+                        setDetailIds((ids) => move(ids, idx, idx + 1));
+                      }}
+                      disabled={idx === data.detailsItems.length - 1}
+                      className="px-2"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </Button>
+                    <Button
+                      variant="danger"
+                      onClick={() => {
+                        setData((d) => ({
+                          ...d,
+                          detailsItems: d.detailsItems.filter((_, i) => i !== idx),
+                        }));
+                        setDetailIds((ids) => ids.filter((_, i) => i !== idx));
+                      }}
+                      className="px-2"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </Button>
+                  </div>
+                </div>
 
-                <div className="grid grid-cols-1 gap-3">
-                  <label className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-zinc-700">Título</span>
-                    <input
-                      type="text"
+                {/* Inputs */}
+                <div className="space-y-3">
+                  <FormGroup className="mb-0">
+                    <InputLabel>Título</InputLabel>
+                    <TextInput
                       value={it.title}
-                      onChange={(e) =>
+                      onChange={(v) =>
                         setData((d) => ({
                           ...d,
                           detailsItems: d.detailsItems.map((x, i) =>
-                            i === idx ? { ...x, title: e.target.value } : x
+                            i === idx ? { ...x, title: v } : x
                           ),
                         }))
                       }
-                      className="h-9 rounded-lg border border-black/10 bg-white px-3 text-sm"
+                      placeholder="Ex: Qualidade Superior"
                     />
-                  </label>
+                  </FormGroup>
 
-                  <label className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-zinc-700">Descrição</span>
-                    <textarea
+                  <FormGroup className="mb-0">
+                    <InputLabel>Descrição</InputLabel>
+                    <TextArea
                       value={it.description}
-                      onChange={(e) =>
+                      onChange={(v) =>
                         setData((d) => ({
                           ...d,
                           detailsItems: d.detailsItems.map((x, i) =>
-                            i === idx ? { ...x, description: e.target.value } : x
+                            i === idx ? { ...x, description: v } : x
                           ),
                         }))
                       }
-                      className="min-h-24 rounded-lg border border-black/10 bg-white px-3 py-2 text-sm"
+                      placeholder="Descreva o detalhe..."
+                      rows={3}
                     />
-                  </label>
+                  </FormGroup>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       </section>
 
-      <section className="flex min-h-[520px] flex-col gap-3">
+      {/* Preview Panel */}
+      <section className="lg:sticky lg:top-28 lg:h-[calc(100vh-8rem)]">
         <BuilderTabs
           preview={{ rendered: renderedTemplate, title: `Preview: ${templateName}` }}
           enablePreviewModal
           htmlPanel={
-            <CodePanel
-              title="HTML — cole no seu site"
-              code={snippet.html}
-              copyLabel="Copiar HTML"
-            />
+            <CodePanel title="HTML" code={snippet.html} copyLabel="Copiar" />
           }
           cssPanel={
-            <CodePanel
-              title="CSS — adicione ao seu <style> ou stylesheet"
-              code={snippet.css}
-              copyLabel="Copiar CSS"
-            />
+            <CodePanel title="CSS" code={snippet.css} copyLabel="Copiar" />
           }
         />
       </section>
@@ -262,77 +461,7 @@ export function AttributesDetailsBarBuilder({ templateName }: Props) {
   );
 }
 
-function SectionHeader({ title, onAdd }: { title: string; onAdd: () => void }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <div className="text-xs font-semibold text-zinc-700">{title}</div>
-      <button
-        type="button"
-        onClick={onAdd}
-        className="rounded-xl bg-black px-3 py-2 text-xs font-semibold text-white hover:bg-zinc-800"
-      >
-        + Adicionar
-      </button>
-    </div>
-  );
-}
-
-function ItemActions({
-  label,
-  idx,
-  total,
-  onUp,
-  onDown,
-  onRemove,
-}: {
-  label: string;
-  idx: number;
-  total: number;
-  onUp: () => void;
-  onDown: () => void;
-  onRemove: () => void;
-}) {
-  return (
-    <div className="mb-2 flex items-center justify-between gap-3">
-      <div className="text-xs font-semibold text-zinc-700">{label}</div>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onUp}
-          disabled={idx === 0}
-          className={[
-            "rounded-lg px-2 py-1 text-xs font-semibold",
-            idx === 0
-              ? "cursor-not-allowed bg-zinc-100 text-zinc-400"
-              : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200",
-          ].join(" ")}
-        >
-          ↑
-        </button>
-        <button
-          type="button"
-          onClick={onDown}
-          disabled={idx === total - 1}
-          className={[
-            "rounded-lg px-2 py-1 text-xs font-semibold",
-            idx === total - 1
-              ? "cursor-not-allowed bg-zinc-100 text-zinc-400"
-              : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200",
-          ].join(" ")}
-        >
-          ↓
-        </button>
-        <button
-          type="button"
-          onClick={onRemove}
-          className="rounded-lg bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
-        >
-          Remover
-        </button>
-      </div>
-    </div>
-  );
-}
+// --- Utilities ---
 
 function move<T>(arr: T[], from: number, to: number) {
   if (to < 0 || to >= arr.length) return arr;
@@ -350,4 +479,3 @@ function isDisallowedImageUrl(url: string) {
   const allowed = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif"];
   return !allowed.some((ext) => u.includes(ext));
 }
-

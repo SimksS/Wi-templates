@@ -12,26 +12,135 @@ import {
   type ComparisonTableData,
 } from "../../lib/templates/registry2";
 
+// --- Types & UI Components ---
+
 type Props = { templateName: string };
 
-export function ComparisonTableBuilder({ templateName }: Props) {
-  const [data, setData] = useState<ComparisonTableData>(() =>
-    getComparisonTableExample()
+function SectionHeader({ title, description }: { title: string; description?: string }) {
+  return (
+    <div className="mb-6">
+      <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
+      {description && (
+        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      )}
+    </div>
   );
+}
 
+function InputLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <label className="block text-sm font-medium text-foreground mb-2">
+      {children}
+    </label>
+  );
+}
+
+function TextInput({
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: "text" | "url";
+}) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="h-11 w-full rounded-lg border border-border bg-white px-4 text-sm text-foreground transition-colors placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+    />
+  );
+}
+
+function FormGroup({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <div className={`space-y-2 ${className}`}>{children}</div>;
+}
+
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`rounded-2xl border border-border bg-card p-5 shadow-sm ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+function Select({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="h-11 rounded-lg border border-border bg-white px-4 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+    >
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function Button({
+  onClick,
+  children,
+  variant = "primary",
+  disabled,
+  className = "",
+}: {
+  onClick?: () => void;
+  children: React.ReactNode;
+  variant?: "primary" | "secondary" | "ghost" | "danger";
+  disabled?: boolean;
+  className?: string;
+}) {
+  const variants = {
+    primary: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
+    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+    ghost: "text-muted-foreground hover:bg-secondary hover:text-foreground",
+    danger: "bg-destructive/10 text-destructive hover:bg-destructive/20",
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={[
+        "btn-press inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200",
+        disabled && "opacity-50 cursor-not-allowed pointer-events-none",
+        variants[variant],
+        className,
+      ].join(" ")}
+    >
+      {children}
+    </button>
+  );
+}
+
+// --- Main Builder ---
+
+export function ComparisonTableBuilder({ templateName }: Props) {
+  const [data, setData] = useState<ComparisonTableData>(() => getComparisonTableExample());
   const [rowIds, setRowIds] = useState<string[]>(() =>
     getComparisonTableExample().rows.map(() => crypto.randomUUID())
   );
 
   const logoInvalid = useMemo(() => isDisallowedImageUrl(data.logoUrl), [data.logoUrl]);
-  const brandInvalid = useMemo(
-    () => isDisallowedImageUrl(data.brandImageUrl),
-    [data.brandImageUrl]
-  );
-  const compInvalid = useMemo(
-    () => isDisallowedImageUrl(data.competitorImageUrl),
-    [data.competitorImageUrl]
-  );
+  const brandInvalid = useMemo(() => isDisallowedImageUrl(data.brandImageUrl), [data.brandImageUrl]);
+  const compInvalid = useMemo(() => isDisallowedImageUrl(data.competitorImageUrl), [data.competitorImageUrl]);
 
   const safeData = useMemo(() => {
     return {
@@ -46,256 +155,271 @@ export function ComparisonTableBuilder({ templateName }: Props) {
   const snippet = useMemo(() => toSnippet(renderedTemplate), [renderedTemplate]);
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <section className="rounded-2xl border border-black/10 bg-white p-5">
-        <div className="mb-4">
-          <h2 className="text-sm font-semibold text-zinc-900">Configuração</h2>
-          <p className="mt-1 text-xs text-zinc-600">
-            Título/subtítulo, imagens e linhas comparativas.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3">
-          <label className="rounded-xl border border-black/10 bg-zinc-50 p-3">
-            <div className="text-xs font-semibold text-zinc-700">Título</div>
-            <input
-              type="text"
-              value={data.title}
-              onChange={(e) => setData((d) => ({ ...d, title: e.target.value }))}
-              className="mt-2 h-9 w-full rounded-lg border border-black/10 bg-white px-3 text-sm"
-            />
-          </label>
-          <label className="rounded-xl border border-black/10 bg-zinc-50 p-3">
-            <div className="text-xs font-semibold text-zinc-700">Subtítulo</div>
-            <input
-              type="text"
-              value={data.subtitle}
-              onChange={(e) => setData((d) => ({ ...d, subtitle: e.target.value }))}
-              className="mt-2 h-9 w-full rounded-lg border border-black/10 bg-white px-3 text-sm"
-            />
-          </label>
-        </div>
-
-        <div className="mt-3 grid grid-cols-1 gap-3">
-          <ImageUrlField
-            label="Logo (marca)"
-            value={data.logoUrl}
-            invalid={logoInvalid}
-            onChange={(v) => setData((d) => ({ ...d, logoUrl: v }))}
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-10">
+      {/* Configuration Panel */}
+      <section className="space-y-6">
+        <Card>
+          <SectionHeader
+            title="Conteúdo Principal"
+            description="Configure os dados exibidos no template"
           />
 
-          <div className="rounded-xl border border-black/10 bg-zinc-50 p-3">
-            <div className="mb-2 text-xs font-semibold text-zinc-700">
-              Cabeçalho da coluna (Marca)
-            </div>
-            <div className="flex items-center gap-3">
-              <select
-                value={data.brandHeaderMode}
-                onChange={(e) =>
-                  setData((d) => ({
-                    ...d,
-                    brandHeaderMode: e.target.value as "text" | "logo",
-                  }))
-                }
-                className="h-9 rounded-lg border border-black/10 bg-white px-3 text-sm"
-              >
-                <option value="text">Nome da marca</option>
-                <option value="logo">Logo</option>
-              </select>
+          <div className="space-y-5">
+            <FormGroup>
+              <InputLabel>Título</InputLabel>
+              <TextInput
+                value={data.title}
+                onChange={(v) => setData((d) => ({ ...d, title: v }))}
+                placeholder="Ex: Por que escolher nosso produto?"
+              />
+            </FormGroup>
 
-              {data.brandHeaderMode === "text" ? (
-                <input
-                  type="text"
-                  value={data.brandName}
-                  onChange={(e) =>
-                    setData((d) => ({ ...d, brandName: e.target.value }))
-                  }
-                  placeholder="Nome da marca"
-                  className="h-9 flex-1 rounded-lg border border-black/10 bg-white px-3 text-sm"
+            <FormGroup>
+              <InputLabel>Subtítulo</InputLabel>
+              <TextInput
+                value={data.subtitle}
+                onChange={(v) => setData((d) => ({ ...d, subtitle: v }))}
+                placeholder="Ex: Veja a diferença em detalhes"
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <InputLabel>Logo da marca</InputLabel>
+              <div className="relative">
+                <TextInput
+                  type="url"
+                  value={data.logoUrl}
+                  onChange={(v) => setData((d) => ({ ...d, logoUrl: v }))}
+                  placeholder="https://... (png/jpg/jpeg/webp/gif/avif)"
                 />
-              ) : (
-                <div className="text-xs text-zinc-600">
-                  Usará a URL informada em “Logo (marca)”.
-                </div>
+              </div>
+              {logoInvalid && (
+                <p className="text-xs text-destructive">
+                  Use uma URL de imagem válida (png/jpg/jpeg/webp/gif/avif).
+                </p>
               )}
-            </div>
+            </FormGroup>
           </div>
+        </Card>
 
-          <label className="rounded-xl border border-black/10 bg-zinc-50 p-3">
-            <div className="text-xs font-semibold text-zinc-700">
-              Cabeçalho da coluna (Concorrente)
-            </div>
-            <input
-              type="text"
-              value={data.competitorName}
-              onChange={(e) =>
-                setData((d) => ({ ...d, competitorName: e.target.value }))
-              }
-              className="mt-2 h-9 w-full rounded-lg border border-black/10 bg-white px-3 text-sm"
-            />
-          </label>
-
-          <ImageUrlField
-            label="Imagem produto (marca)"
-            value={data.brandImageUrl}
-            invalid={brandInvalid}
-            onChange={(v) => setData((d) => ({ ...d, brandImageUrl: v }))}
+        <Card>
+          <SectionHeader
+            title="Configuração da Tabela"
+            description="Defina os cabeçalhos e imagens da comparação"
           />
-          <ImageUrlField
-            label="Imagem produto (concorrente)"
-            value={data.competitorImageUrl}
-            invalid={compInvalid}
-            onChange={(v) => setData((d) => ({ ...d, competitorImageUrl: v }))}
-          />
-        </div>
 
-        <div className="mt-5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-xs font-semibold text-zinc-700">
-              Comparações ({data.rows.length})
+          <div className="space-y-5">
+            <FormGroup>
+              <InputLabel>Cabeçalho da coluna (Marca)</InputLabel>
+              <div className="flex items-center gap-3">
+                <Select
+                  value={data.brandHeaderMode}
+                  onChange={(v) => setData((d) => ({ ...d, brandHeaderMode: v as "text" | "logo" }))}
+                  options={[
+                    { value: "text", label: "Nome da marca" },
+                    { value: "logo", label: "Logo" },
+                  ]}
+                />
+                {data.brandHeaderMode === "text" ? (
+                  <TextInput
+                    value={data.brandName}
+                    onChange={(v) => setData((d) => ({ ...d, brandName: v }))}
+                    placeholder="Nome da sua marca"
+                    className="flex-1"
+                  />
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    Usará a URL informada acima
+                  </span>
+                )}
+              </div>
+            </FormGroup>
+
+            <FormGroup>
+              <InputLabel>Cabeçalho da coluna (Concorrente)</InputLabel>
+              <TextInput
+                value={data.competitorName}
+                onChange={(v) => setData((d) => ({ ...d, competitorName: v }))}
+                placeholder="Nome do concorrente"
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <InputLabel>Imagem do produto (Marca)</InputLabel>
+              <TextInput
+                type="url"
+                value={data.brandImageUrl}
+                onChange={(v) => setData((d) => ({ ...d, brandImageUrl: v }))}
+                placeholder="https://..."
+              />
+              {brandInvalid && (
+                <p className="text-xs text-destructive">Imagem inválida.</p>
+              )}
+            </FormGroup>
+
+            <FormGroup>
+              <InputLabel>Imagem do produto (Concorrente)</InputLabel>
+              <TextInput
+                type="url"
+                value={data.competitorImageUrl}
+                onChange={(v) => setData((d) => ({ ...d, competitorImageUrl: v }))}
+                placeholder="https://..."
+              />
+              {compInvalid && (
+                <p className="text-xs text-destructive">Imagem inválida.</p>
+              )}
+            </FormGroup>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">Linhas de Comparação</h2>
+              <p className="text-sm text-muted-foreground">{data.rows.length} atributos configurados</p>
             </div>
-            <button
-              type="button"
+            <Button
               onClick={() => {
                 setData((d) => ({
                   ...d,
                   rows: [
                     ...d.rows,
-                    {
-                      attribute: "Novo atributo",
-                      brand: { kind: "text", value: "0g" },
-                      competitor: { kind: "text", value: "0g" },
-                    },
+                    { attribute: "Novo atributo", brand: { kind: "text", value: "-" }, competitor: { kind: "text", value: "-" } },
                   ],
                 }));
                 setRowIds((ids) => [...ids, crypto.randomUUID()]);
               }}
-              className="rounded-xl bg-black px-3 py-2 text-xs font-semibold text-white hover:bg-zinc-800"
             >
-              + Adicionar
-            </button>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Adicionar
+            </Button>
           </div>
 
-          <div className="mt-3 flex flex-col gap-3">
+          <div className="space-y-4">
             {data.rows.map((row, idx) => (
-              <div key={rowIds[idx] ?? `${idx}`} className="rounded-2xl border border-black/10 bg-white p-3">
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <div className="text-xs font-semibold text-zinc-700">
-                    Linha {idx + 1}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setData((d) => ({ ...d, rows: move(d.rows, idx, idx - 1) }));
-                        setRowIds((ids) => move(ids, idx, idx - 1));
-                      }}
-                      disabled={idx === 0}
-                      className={[
-                        "rounded-lg px-2 py-1 text-xs font-semibold",
-                        idx === 0
-                          ? "cursor-not-allowed bg-zinc-100 text-zinc-400"
-                          : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200",
-                      ].join(" ")}
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setData((d) => ({ ...d, rows: move(d.rows, idx, idx + 1) }));
-                        setRowIds((ids) => move(ids, idx, idx + 1));
-                      }}
-                      disabled={idx === data.rows.length - 1}
-                      className={[
-                        "rounded-lg px-2 py-1 text-xs font-semibold",
-                        idx === data.rows.length - 1
-                          ? "cursor-not-allowed bg-zinc-100 text-zinc-400"
-                          : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200",
-                      ].join(" ")}
-                    >
-                      ↓
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setData((d) => ({ ...d, rows: d.rows.filter((_, i) => i !== idx) }));
-                        setRowIds((ids) => ids.filter((_, i) => i !== idx));
-                      }}
-                      className="rounded-lg bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
-                    >
-                      Remover
-                    </button>
-                  </div>
-                </div>
-
-                <label className="flex flex-col gap-1">
-                  <span className="text-xs font-semibold text-zinc-700">Atributo</span>
-                  <input
-                    type="text"
-                    value={row.attribute}
-                    onChange={(e) => updateRow(setData, idx, { attribute: e.target.value })}
-                    className="h-9 rounded-lg border border-black/10 bg-white px-3 text-sm"
-                  />
-                </label>
-
-                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <ValueEditor
-                    label="Marca"
-                    value={row.brand}
-                    onChange={(v) => updateRow(setData, idx, { brand: v })}
-                  />
-                  <ValueEditor
-                    label="Concorrente"
-                    value={row.competitor}
-                    onChange={(v) => updateRow(setData, idx, { competitor: v })}
-                  />
-                </div>
-              </div>
+              <ComparisonRowCard
+                key={rowIds[idx] ?? `${idx}`}
+                row={row}
+                idx={idx}
+                totalRows={data.rows.length}
+                onMoveUp={() => {
+                  setData((d) => ({ ...d, rows: move(d.rows, idx, idx - 1) }));
+                  setRowIds((ids) => move(ids, idx, idx - 1));
+                }}
+                onMoveDown={() => {
+                  setData((d) => ({ ...d, rows: move(d.rows, idx, idx + 1) }));
+                  setRowIds((ids) => move(ids, idx, idx + 1));
+                }}
+                onDelete={() => {
+                  setData((d) => ({ ...d, rows: d.rows.filter((_, i) => i !== idx) }));
+                  setRowIds((ids) => ids.filter((_, i) => i !== idx));
+                }}
+                onUpdate={(patch) => updateRow(setData, idx, patch)}
+              />
             ))}
           </div>
-        </div>
+        </Card>
       </section>
 
-      <section className="flex min-h-[520px] flex-col gap-3">
+      {/* Preview Panel */}
+      <section className="lg:sticky lg:top-28 lg:h-[calc(100vh-8rem)]">
         <BuilderTabs
           preview={{ rendered: renderedTemplate, title: `Preview: ${templateName}` }}
           enablePreviewModal
-          htmlPanel={<CodePanel title="HTML — cole no seu site" code={snippet.html} copyLabel="Copiar HTML" />}
-          cssPanel={<CodePanel title="CSS — adicione ao seu <style> ou stylesheet" code={snippet.css} copyLabel="Copiar CSS" />}
+          htmlPanel={
+            <CodePanel
+              title="HTML"
+              code={snippet.html}
+              copyLabel="Copiar"
+            />
+          }
+          cssPanel={
+            <CodePanel
+              title="CSS"
+              code={snippet.css}
+              copyLabel="Copiar"
+            />
+          }
         />
       </section>
     </div>
   );
 }
 
-function ImageUrlField({
-  label,
-  value,
-  invalid,
-  onChange,
+// --- Sub-components ---
+
+function ComparisonRowCard({
+  row,
+  idx,
+  totalRows,
+  onMoveUp,
+  onMoveDown,
+  onDelete,
+  onUpdate,
 }: {
-  label: string;
-  value: string;
-  invalid: boolean;
-  onChange: (v: string) => void;
+  row: ComparisonRow;
+  idx: number;
+  totalRows: number;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onDelete: () => void;
+  onUpdate: (patch: Partial<ComparisonRow>) => void;
 }) {
   return (
-    <label className="rounded-xl border border-black/10 bg-zinc-50 p-3">
-      <div className="text-xs font-semibold text-zinc-700">{label}</div>
-      <input
-        type="url"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="https://... (png/jpg/jpeg/webp/gif/avif)"
-        className="mt-2 h-9 w-full rounded-lg border border-black/10 bg-white px-3 text-sm"
-      />
-      {invalid ? (
-        <div className="mt-2 text-[11px] font-medium text-red-700">
-          Use uma URL de imagem (png/jpg/jpeg/webp/gif/avif). SVG não é aceito.
+    <div className="rounded-xl border border-border bg-card/50 p-4 space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10 text-xs font-semibold text-primary">
+            {idx + 1}
+          </span>
+          <span className="text-sm font-medium text-foreground">Linha {idx + 1}</span>
         </div>
-      ) : null}
-    </label>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" onClick={onMoveUp} disabled={idx === 0} className="px-2">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+            </svg>
+          </Button>
+          <Button variant="ghost" onClick={onMoveDown} disabled={idx === totalRows - 1} className="px-2">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </Button>
+          <Button variant="danger" onClick={onDelete} className="px-2">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </Button>
+        </div>
+      </div>
+
+      {/* Attribute Input */}
+      <FormGroup>
+        <InputLabel>Atributo</InputLabel>
+        <TextInput
+          value={row.attribute}
+          onChange={(v) => onUpdate({ attribute: v })}
+          placeholder="Ex: Proteína, Calorias, etc."
+        />
+      </FormGroup>
+
+      {/* Values Grid */}
+      <div className="grid grid-cols-2 gap-4">
+        <ValueEditor
+          label="Sua Marca"
+          value={row.brand}
+          onChange={(v) => onUpdate({ brand: v })}
+        />
+        <ValueEditor
+          label={row.competitorName || "Concorrente"}
+          value={row.competitor}
+          onChange={(v) => onUpdate({ competitor: v })}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -309,56 +433,57 @@ function ValueEditor({
   onChange: (v: ComparisonRow["brand"]) => void;
 }) {
   return (
-    <div className="rounded-xl border border-black/10 bg-zinc-50 p-3">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="text-xs font-semibold text-zinc-700">{label}</div>
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-foreground">{label}</span>
         <select
           value={value.kind}
           onChange={(e) => {
             const kind = e.target.value as "text" | "boolean";
             onChange(kind === "text" ? { kind: "text", value: "" } : { kind: "boolean", value: true });
           }}
-          className="h-8 rounded-lg border border-black/10 bg-white px-2 text-xs"
+          className="h-8 rounded-lg border-border bg-secondary px-2 text-xs font-medium text-secondary-foreground focus:border-primary focus:outline-none cursor-pointer"
         >
           <option value="text">Texto</option>
-          <option value="boolean">Booleano</option>
+          <option value="boolean">Sim/Não</option>
         </select>
       </div>
 
       {value.kind === "text" ? (
-        <input
-          type="text"
+        <TextInput
           value={value.value}
-          onChange={(e) => onChange({ kind: "text", value: e.target.value })}
-          className="h-9 w-full rounded-lg border border-black/10 bg-white px-3 text-sm"
+          onChange={(v) => onChange({ kind: "text", value: v })}
+          placeholder="Valor"
         />
       ) : (
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
+        <div className="flex items-center gap-2">
+          <Button
+            variant={value.value ? "primary" : "secondary"}
             onClick={() => onChange({ kind: "boolean", value: true })}
-            className={[
-              "flex-1 rounded-lg px-3 py-2 text-sm font-semibold",
-              value.value ? "bg-black text-white" : "bg-white text-zinc-700 border border-black/10",
-            ].join(" ")}
+            className="flex-1 py-1.5"
           >
+            <svg className="h-4 w-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
             Sim
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant={!value.value ? "primary" : "secondary"}
             onClick={() => onChange({ kind: "boolean", value: false })}
-            className={[
-              "flex-1 rounded-lg px-3 py-2 text-sm font-semibold",
-              !value.value ? "bg-black text-white" : "bg-white text-zinc-700 border border-black/10",
-            ].join(" ")}
+            className="flex-1 py-1.5"
           >
+            <svg className="h-4 w-4 text-destructive" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
             Não
-          </button>
+          </Button>
         </div>
       )}
     </div>
   );
 }
+
+// --- Utilities ---
 
 function updateRow(
   setData: React.Dispatch<React.SetStateAction<ComparisonTableData>>,
@@ -387,4 +512,3 @@ function isDisallowedImageUrl(url: string) {
   const allowed = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif"];
   return !allowed.some((ext) => u.includes(ext));
 }
-
