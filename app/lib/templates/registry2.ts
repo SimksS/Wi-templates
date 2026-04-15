@@ -118,16 +118,17 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export function previewTemplate(meta: TemplateMeta): RenderedTemplate {
-  const def =
-    (templateById as Record<
-      string,
-      (typeof templateList)[number] | undefined
-    >)[meta.id];
-
-  if (!def) {
-    return { html: `<div>Template não encontrado: ${meta.id}</div>`, css: "" };
+  switch (meta.id) {
+    case "attributes-strip":
+      return renderAttributesStrip(getAttributesStripExample());
+    case "contains-compare":
+      return renderContainsCompare(getContainsCompareExample());
+    case "attributes-details-bar":
+      return renderAttributesDetailsBar(getAttributesDetailsBarExample());
+    case "comparison-table":
+      return renderComparisonTable(getComparisonTableExample());
+    default:
+      return { html: `<div>Template não encontrado: ${meta.id}</div>`, css: "" };
   }
-
-  return def.render(def.getExample());
 }
 

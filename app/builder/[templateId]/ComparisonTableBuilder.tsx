@@ -40,11 +40,13 @@ function TextInput({
   onChange,
   placeholder,
   type = "text",
+  className = "",
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   type?: "text" | "url";
+  className?: string;
 }) {
   return (
     <input
@@ -52,7 +54,7 @@ function TextInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="h-11 w-full rounded-lg border border-border bg-white px-4 text-sm text-foreground transition-colors placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+      className={`h-11 w-full rounded-lg border border-border bg-white px-4 text-sm text-foreground transition-colors placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary ${className}`}
     />
   );
 }
@@ -304,6 +306,7 @@ export function ComparisonTableBuilder({ templateName }: Props) {
                 row={row}
                 idx={idx}
                 totalRows={data.rows.length}
+                competitorName={data.competitorName}
                 onMoveUp={() => {
                   setData((d) => ({ ...d, rows: move(d.rows, idx, idx - 1) }));
                   setRowIds((ids) => move(ids, idx, idx - 1));
@@ -358,6 +361,7 @@ function ComparisonRowCard({
   onMoveDown,
   onDelete,
   onUpdate,
+  competitorName,
 }: {
   row: ComparisonRow;
   idx: number;
@@ -366,6 +370,7 @@ function ComparisonRowCard({
   onMoveDown: () => void;
   onDelete: () => void;
   onUpdate: (patch: Partial<ComparisonRow>) => void;
+  competitorName: string;
 }) {
   return (
     <div className="rounded-xl border border-border bg-card/50 p-4 space-y-4">
@@ -414,7 +419,7 @@ function ComparisonRowCard({
           onChange={(v) => onUpdate({ brand: v })}
         />
         <ValueEditor
-          label={row.competitorName || "Concorrente"}
+          label={competitorName || "Concorrente"}
           value={row.competitor}
           onChange={(v) => onUpdate({ competitor: v })}
         />
