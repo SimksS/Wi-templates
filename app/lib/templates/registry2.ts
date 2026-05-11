@@ -1,4 +1,5 @@
-import type { TemplateDefinition } from "./templateDefinition";
+import type { ComponentType } from "react";
+
 import type { RenderedTemplate, TemplateMeta } from "./types";
 
 import type { AttributesStripData } from "./templates/attributes-strip/types";
@@ -43,6 +44,14 @@ import {
 } from "./templates/comparison-table/definition";
 import { ComparisonTableBuilder } from "./templates/comparison-table/Builder";
 
+import type { FaqData, FaqItem } from "./templates/faq/types";
+import {
+  meta as faqMeta,
+  getExample as getFaqExample,
+  render as renderFaq,
+} from "./templates/faq/definition";
+import { FaqBuilder } from "./templates/faq/Builder";
+
 export { toSnippet } from "./toSnippet";
 
 export type {
@@ -54,6 +63,8 @@ export type {
   ComparisonValue,
   ComparisonRow,
   ComparisonTableData,
+  FaqItem,
+  FaqData,
 };
 
 export {
@@ -65,15 +76,23 @@ export {
   renderAttributesDetailsBar,
   getComparisonTableExample,
   renderComparisonTable,
+  getFaqExample,
+  renderFaq,
 };
 
 export type TemplateId =
   | "attributes-strip"
   | "contains-compare"
   | "attributes-details-bar"
-  | "comparison-table";
+  | "comparison-table"
+  | "faq";
 
-type TemplateDefinitionAny = TemplateDefinition<any>;
+type TemplateDefinitionAny = {
+  meta: TemplateMeta;
+  getExample: () => unknown;
+  render: (data: never) => RenderedTemplate;
+  Builder: ComponentType<{ templateName: string }>;
+};
 
 export const templateList = [
   {
@@ -100,12 +119,21 @@ export const templateList = [
     render: renderComparisonTable,
     Builder: ComparisonTableBuilder,
   },
+  {
+    meta: faqMeta,
+    getExample: getFaqExample,
+    render: renderFaq,
+    Builder: FaqBuilder,
+  },
 ] as const satisfies readonly TemplateDefinitionAny[];
 
 export const templates: TemplateMeta[] = templateList.map((t) => t.meta);
 
 export const templateById: Record<TemplateId, (typeof templateList)[number]> =
-  Object.fromEntries(templateList.map((t) => [t.meta.id, t])) as any;
+  Object.fromEntries(templateList.map((t) => [t.meta.id, t])) as Record<
+    TemplateId,
+    (typeof templateList)[number]
+  >;
 
 if (process.env.NODE_ENV !== "production") {
   const ids = new Set<string>();
@@ -127,6 +155,8 @@ export function previewTemplate(meta: TemplateMeta): RenderedTemplate {
       return renderAttributesDetailsBar(getAttributesDetailsBarExample());
     case "comparison-table":
       return renderComparisonTable(getComparisonTableExample());
+    case "faq":
+      return renderFaq(getFaqExample());
     default:
       return { html: `<div>Template não encontrado: ${meta.id}</div>`, css: "" };
   }
