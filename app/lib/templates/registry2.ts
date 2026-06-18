@@ -52,6 +52,14 @@ import {
 } from "./templates/faq/definition";
 import { FaqBuilder } from "./templates/faq/Builder";
 
+import type { ImageTextFeatureData } from "./templates/image-text-feature/types";
+import {
+  meta as imageTextFeatureMeta,
+  getExample as getImageTextFeatureExample,
+  render as renderImageTextFeature,
+} from "./templates/image-text-feature/definition";
+import { ImageTextFeatureBuilder } from "./templates/image-text-feature/Builder";
+
 export { toSnippet } from "./toSnippet";
 
 export type {
@@ -65,6 +73,7 @@ export type {
   ComparisonTableData,
   FaqItem,
   FaqData,
+  ImageTextFeatureData,
 };
 
 export {
@@ -78,6 +87,8 @@ export {
   renderComparisonTable,
   getFaqExample,
   renderFaq,
+  getImageTextFeatureExample,
+  renderImageTextFeature,
 };
 
 export type TemplateId =
@@ -85,7 +96,8 @@ export type TemplateId =
   | "contains-compare"
   | "attributes-details-bar"
   | "comparison-table"
-  | "faq";
+  | "faq"
+  | "image-text-feature";
 
 type TemplateDefinitionAny = {
   meta: TemplateMeta;
@@ -125,6 +137,12 @@ export const templateList = [
     render: renderFaq,
     Builder: FaqBuilder,
   },
+  {
+    meta: imageTextFeatureMeta,
+    getExample: getImageTextFeatureExample,
+    render: renderImageTextFeature,
+    Builder: ImageTextFeatureBuilder,
+  },
 ] as const satisfies readonly TemplateDefinitionAny[];
 
 export const templates: TemplateMeta[] = templateList.map((t) => t.meta);
@@ -157,6 +175,8 @@ export function previewTemplate(meta: TemplateMeta): RenderedTemplate {
       return renderComparisonTable(getComparisonTableExample());
     case "faq":
       return renderFaq(getFaqExample());
+    case "image-text-feature":
+      return renderImageTextFeature(getImageTextFeatureExample());
     default:
       return { html: `<div>Template não encontrado: ${meta.id}</div>`, css: "" };
   }
